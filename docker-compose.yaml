@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  bot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - secret.env
+    restart: always
+    logging:
+      options:
+        max-size: "1G"
+        max-file: "4"
