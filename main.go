@@ -80,11 +80,11 @@ func do(fileName string, s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	defer func() {
-		log.Printf("error leaving from voice channel: %s", err)
-		leaveVC(m.GuildID)
+		if err := leaveVC(m.GuildID); err != nil {
+			log.Printf("error leaving from voice channel: %s", err)
+		}
 	}()
 
-	time.Sleep(100 * time.Microsecond)
 	if err := play(m.GuildID, b); err != nil {
 		log.Printf("error playing sound: %s", err)
 		return
@@ -150,15 +150,22 @@ func play(guildID string, dat []byte) error {
 	if err != nil {
 		return fmt.Errorf("error createing ogg buffer: %w", err)
 	}
+
+	time.Sleep(100 * time.Microsecond)
+
 	if err := conn.Speaking(true); err != nil {
 		log.Printf("error update speaking state to on: %s", err)
 	}
+	defer func() {
+		if err := conn.Speaking(false); err != nil {
+			log.Printf("error update speaking state to off: %s", err)
+		}
+	}()
+
 	for _, buff := range oggBuf {
 		conn.OpusSend <- buff
 	}
-	if err := conn.Speaking(false); err != nil {
-		log.Printf("error update speaking state to off: %s", err)
-	}
+
 	return nil
 }
 
